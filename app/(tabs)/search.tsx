@@ -3,6 +3,7 @@ import SearchBar from "@/components/SearchBar";
 import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import { fetchMovies } from "@/services/api";
+import { updateSearchCount } from "@/services/appwrite";
 import useFetch from "@/services/useFetch";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Text, View } from "react-native";
@@ -15,21 +16,26 @@ const Search = () => {
         loading: moviesLoading,
         error: moviesError,
         refetch: loadMovies,
-        reset
+        reset,
     } = useFetch(() => fetchMovies({ query: searchQuery }), false); // autoFetch en false
 
     useEffect(() => {
-
         const timeoutId = setTimeout(async () => {
-            if(searchQuery.trim()) {
+            if (searchQuery.trim()) {
                 await loadMovies();
             } else {
-                reset()
+                reset();
             }
         }, 500);
 
         return () => clearTimeout(timeoutId);
     }, [searchQuery]);
+
+    useEffect(() => {
+        if (movies?.length > 0 && movies?.[0]) {
+            updateSearchCount(searchQuery, movies[0]);
+        }
+    }, [movies]);
 
     return (
         <View className="flex-1 bg-primary">
@@ -60,10 +66,12 @@ const Search = () => {
                         </View>
 
                         <View className="my-5">
-                            <SearchBar 
-                                placeholder="Search movies..." 
+                            <SearchBar
+                                placeholder="Search movies..."
                                 value={searchQuery}
-                                onChangeText={(text: string) => setSearchQuery(text)}
+                                onChangeText={(text: string) =>
+                                    setSearchQuery(text)
+                                }
                             />
                         </View>
 
@@ -98,7 +106,9 @@ const Search = () => {
                     !moviesLoading && !moviesError ? (
                         <View className="mt-10 px-5">
                             <Text className="text-center text-gray-500">
-                                {searchQuery.trim() ? "No movies found" : "Search for a movie"}
+                                {searchQuery.trim()
+                                    ? "No movies found"
+                                    : "Search for a movie"}
                             </Text>
                         </View>
                     ) : null
